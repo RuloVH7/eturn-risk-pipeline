@@ -105,6 +105,7 @@ def forecast_forward(model, scaler, daily: pd.DataFrame, horizon: int) -> pd.Dat
 st.set_page_config(page_title="Sales Pipeline Portfolio Project", layout="wide")
 st.title("Sales Analytics Pipeline")
 st.caption("ETL → BigQuery → PyTorch forecasting, built on real messy transaction data")
+st.link_button( "📊 View Business Dashboard (Looker Studio)", "https://datastudio.google.com/reporting/b511419c-3a80-4f4b-ac77-4afb72263271", )
 
 df = load_clean_data()
 quality = load_quality_report()
