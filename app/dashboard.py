@@ -166,7 +166,8 @@ quality = load_quality_report()
 
 st.caption(
     f"🔴 Live from BigQuery — last transaction date: **{df['Order_Date'].max().strftime('%Y-%m-%d')}** "
-    f"· {len(df):,} total rows · refreshed hourly"
+    f"· {len(df):,} total rows · data updated by an automated n8n pipeline (scheduled daily) "
+    f"· dashboard cache refreshes hourly"
 )
 
 tab1, tab2, tab3 = st.tabs(["Data Quality (ETL)", "Business Overview", "Revenue Forecast (PyTorch)"])
