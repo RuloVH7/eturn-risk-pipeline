@@ -13,7 +13,7 @@ How it works:
     on each run (cheap at this scale — ~18k rows takes well under a second)
 
 This is a portfolio/demo device, not a claim that real transactions are
-arriving — see README for how this is framed honestly.
+arriving — see README for how this is framed.
 
 Usage:
     python etl/generate_daily_batch.py --days 1
