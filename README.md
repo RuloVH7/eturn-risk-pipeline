@@ -1,4 +1,11 @@
 # Sales Analytics Pipeline: ETL → BigQuery → PyTorch Forecasting → n8n
+![pytorch](https://img.shields.io/badge/pytorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
+![googlebigquery](https://img.shields.io/badge/bigquery-4285F4?style=for-the-badge&logo=googlebigquery&logoColor=white)
+![n8n](https://img.shields.io/badge/n8n-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)
+![streamlit](https://img.shields.io/badge/streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![googlecloud](https://img.shields.io/badge/google_cloud-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)
+![git](https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![github](https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white)
 
 An end-to-end data pipeline built on a real (messy) 18,000-row retail transactions
 dataset spanning 2022–2025, six countries, and four sales channels.
