@@ -21,13 +21,30 @@
     },
     {
       "parameters": {
+        "command": "cd /root/return-risk-pipeline && source venv/bin/activate && python3 etl/generate_daily_batch.py --days 1"
+      },
+      "id": "simulate-daily-data",
+      "name": "SSH: Simulate New Daily Transactions",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [330, 320],
+      "credentials": {
+        "sshPassword": {
+          "id": "REPLACE_WITH_YOUR_SSH_CREDENTIAL_ID",
+          "name": "Hostinger VPS SSH"
+        }
+      },
+      "notes": "This is a portfolio-project device: since this dataset is historical and static (2022-2025, no live feed), this step generates one statistically-realistic new day of transactions (sampled from the real historical distributions) and appends it to the raw CSV, so the daily pipeline has something genuinely new to process each run. In a real deployment this node would be replaced by whatever actually produces new transactions (a POS system export, an orders API, etc.)."
+    },
+    {
+      "parameters": {
         "command": "cd /root/return-risk-pipeline && source venv/bin/activate && python3 etl/clean.py --input data/raw/Sales_transactions_2022_2025.csv --output data/processed/sales_clean.csv --report data/processed/data_quality_report.json"
       },
       "id": "run-etl",
       "name": "SSH: Run ETL (clean.py)",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
-      "position": [440, 320],
+      "position": [550, 320],
       "credentials": {
         "sshPassword": {
           "id": "REPLACE_WITH_YOUR_SSH_CREDENTIAL_ID",
@@ -44,7 +61,7 @@
       "name": "SSH: Read Quality Report File",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
-      "position": [660, 320],
+      "position": [770, 320],
       "credentials": {
         "sshPassword": {
           "id": "REPLACE_WITH_YOUR_SSH_CREDENTIAL_ID",
@@ -83,7 +100,7 @@
     },
     {
       "parameters": {
-        "command": "cd /root/return-risk-pipeline && source venv/bin/activate && export GOOGLE_APPLICATION_CREDENTIALS=/root/gcp-key.json && python3 etl/load_bigquery.py --project ${GCP_PROJECT_ID} --dataset sales_analytics"
+        "command": "cd /root/return-risk-pipeline && source venv/bin/activate && export GOOGLE_APPLICATION_CREDENTIALS=/root/gcp-key.json && python3 etl/load_bigquery.py --project bigqueryproject-509014 --dataset sales_analytics"
       },
       "id": "load-bq",
       "name": "SSH: Load to BigQuery",
@@ -195,6 +212,9 @@
   ],
   "connections": {
     "Daily Schedule (6am)": {
+      "main": [[{ "node": "SSH: Simulate New Daily Transactions", "type": "main", "index": 0 }]]
+    },
+    "SSH: Simulate New Daily Transactions": {
       "main": [[{ "node": "SSH: Run ETL (clean.py)", "type": "main", "index": 0 }]]
     },
     "SSH: Run ETL (clean.py)": {

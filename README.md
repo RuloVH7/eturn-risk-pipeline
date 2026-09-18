@@ -81,6 +81,35 @@ The negative result is left in the repo (`models/train.py`) rather than
 deleted, because catching a modeling dead-end *before* shipping it is the
 actual skill being demonstrated.
 
+## Making the daily automation mean something
+
+This dataset is historical and static (2022–2025) — there's no live feed of
+new transactions, so a naive "run the pipeline every day at 6am" would just
+reprocess the same file forever, which isn't a meaningful demo of
+orchestration.
+
+`etl/generate_daily_batch.py` addresses this directly: each run generates one
+new day of transactions, **sampled from the real historical distributions**
+(same category/region/price/discount patterns as the actual data — not
+invented ranges), and appends it to the raw file. The n8n workflow runs this
+first, then the existing ETL → BigQuery → forecast steps process the grown
+file. Each day the pipeline runs, there's genuinely new data flowing through
+it, the forecast model has one more real day of history to learn from, and
+the whole thing is idempotent and safe to run repeatedly.
+
+This is explicitly a portfolio-project device, not a claim that real orders
+are arriving — in a real deployment, this node would be replaced by whatever
+actually produces transactions (a POS export, an orders API, a webhook). The
+rest of the pipeline (ETL, quality gates, BigQuery load, retraining, model
+quality gate) is written exactly as it would be for genuinely fresh data,
+which is the part actually being demonstrated.
+
+**Design trade-off, stated plainly:** the pipeline reprocesses the entire
+dataset from scratch on every run rather than doing an incremental
+load/append. At ~18,000 rows this takes well under a second, so the added
+complexity of incremental BigQuery merges isn't worth it here. At production
+scale (millions of rows), this would be the first thing to change.
+
 ## Project structure
 
 ```
