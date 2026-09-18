@@ -1,0 +1,24 @@
+{
+  "duplicate_transaction_ids_removed": 45,
+  "rows_after_dedupe": 18000,
+  "rows_dropped_dedupe": 45,
+  "implausible_ages_nulled": 3,
+  "rows_before": 18045,
+  "rows_after": 18000,
+  "columns_before": 36,
+  "columns_after": 45,
+  "return_rate_percent": 10.41,
+  "missing_values_after": {
+    "Customer_Name": 108,
+    "Customer_Age": 219,
+    "Customer_Gender": 162,
+    "Product_Name": 144,
+    "Payment_Method": 144,
+    "Delivery_Days": 162,
+    "Return_Reason": 16127,
+    "Promotion_Code": 9712,
+    "Customer_Rating": 3430,
+    "Inventory_Level": 198,
+    "Discount_Bucket": 1
+  }
+}

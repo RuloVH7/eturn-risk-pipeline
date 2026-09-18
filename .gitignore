@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.DS_Store
+
+# Never commit GCP credentials
+*-key.json
+service-account*.json
+GOOGLE_APPLICATION_CREDENTIALS
+
+# Virtual envs
+venv/
+.venv/
+env/
+
+# Streamlit
+.streamlit/secrets.toml

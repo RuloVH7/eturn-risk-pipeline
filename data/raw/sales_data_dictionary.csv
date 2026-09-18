@@ -1,0 +1,37 @@
+Column_Name,Description,Data_Type,Example_Value,Business_Meaning
+Transaction_ID,Unique identifier for an individual transaction record,Text,T20001234,Transaction-level key
+Order_ID,Identifier for the customer order; multiple lines may share an order,Text,O1001234,Groups order lines into orders
+Customer_ID,Identifier for the customer,Text,C01234,Supports repeat-customer analysis
+Customer_Name,Customer name from CRM,Text,Emma Carter,Customer display/identification
+Customer_Age,Customer age at transaction,Integer,42,Demographic analysis; rare anomalies included
+Customer_Gender,Customer-reported gender,Text,Female,Demographic segmentation
+Customer_Segment,Commercial/lifecycle customer segment,Text,Returning Customer,Customer behavior and value analysis
+Order_Date,Date transaction was placed,Date,2024-11-29,Time-series and seasonality analysis
+Order_Time,Time transaction was placed,Time,14:37:21,Hourly and anomaly analysis
+Sales_Channel,Order channel,Text,Online,Channel performance
+Store_ID,Store/location identifier,Text,NYC-01,Store-level analysis
+Store_Name,Store/location name,Text,New York Central,Store reporting
+Country,Country of sale,Text,United States,Geographic analysis
+Region,State/province/region,Text,Northeast,Regional analysis
+City,City of sale,Text,New York,Geographic analysis
+Product_ID,Product identifier,Text,P001,Product key
+Product_Name,Product name,Text,AeroBook 14 Laptop,Product performance
+Product_Category,High-level product category,Text,Electronics,Category analysis
+Product_Subcategory,Detailed product group,Text,Laptops,Subcategory analysis
+Quantity,Units in transaction,Integer,2,Volume/basket-size analysis
+Unit_Price,Price per unit before discount,Decimal,899.00,Pricing analysis
+Discount_Percentage,Discount applied,Decimal,10,Promotion and margin analysis
+Sales_Amount,Recorded net sales amount,Decimal,1618.20,Revenue analysis
+Cost_Amount,Recorded transaction cost,Decimal,1400.00,Cost analysis
+Profit,Recorded transaction profit,Decimal,218.20,Profitability analysis
+Payment_Method,Payment method,Text,Credit Card,Payment behavior
+Order_Status,Operational order status,Text,Completed,Fulfillment analysis
+Shipping_Method,Fulfillment/shipping method,Text,Standard,Delivery analysis
+Delivery_Days,Recorded delivery duration,Integer,5,Service-level analysis
+Return_Flag,Whether transaction was returned,Text,No,Return-rate analysis
+Return_Reason,Return reason if applicable,Text,Damaged,Return root-cause analysis
+Sales_Representative,Sales representative,Text,Emma Carter,Rep performance
+Promotion_Code,Promotion/campaign code,Text,BLACKFRIDAY25,Campaign analysis
+Customer_Rating,"Customer rating, generally 1–5",Decimal,5,Satisfaction analysis
+Inventory_Level,Approximate inventory at transaction,Integer,61,Inventory analysis
+Order_Year,Year derived from Order_Date,Integer,2024,Convenience field; can be recalculated
