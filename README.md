@@ -4,6 +4,7 @@ An end-to-end data pipeline built on a real (messy) 18,000-row retail transactio
 dataset spanning 2022–2025, six countries, and four sales channels.
 
 **Live demo:** https://sales-pipeline-rulovh7.streamlit.app
+
 **Dashboard (BigQuery + Looker Studio):** https://datastudio.google.com/reporting/b511419c-3a80-4f4b-ac77-4afb72263271
 
 ## What this project demonstrates
