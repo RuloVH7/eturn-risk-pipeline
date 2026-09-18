@@ -8,7 +8,9 @@
 ![github](https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white)
 
 An end-to-end data pipeline built on a real (messy) 18,000-row retail transactions
-dataset spanning 2022–2025, six countries, and four sales channels.
+dataset spanning 2022–2025, six countries, and four sales channels — with new
+transactions simulated and processed automatically every day via a scheduled
+n8n workflow.
 
 **Live demo:** https://sales-pipeline-rulovh7.streamlit.app
 
