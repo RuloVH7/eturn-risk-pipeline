@@ -1,9 +1,9 @@
 {
-  "mae": 3305.33,
-  "rmse": 4126.91,
-  "mape_percent": 49.76,
+  "mae": 3278.59,
+  "rmse": 4121.33,
+  "mape_percent": 50.08,
   "test_days": 90,
-  "actual_mean_daily_revenue": 8094.61,
-  "naive_baseline_mae": 4473.73,
+  "actual_mean_daily_revenue": 8115.56,
+  "naive_baseline_mae": 4472.52,
   "beats_naive_baseline": true
 }

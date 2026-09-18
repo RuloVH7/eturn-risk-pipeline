@@ -2,10 +2,14 @@
 Interactive dashboard for the sales pipeline project.
 
 Three tabs:
-  1. Data Quality — before/after ETL report (what was fixed and why)
+  1. Data Quality — live ETL metrics (raw vs. clean row counts, remaining nulls)
   2. Business Overview — revenue, returns, channel/category breakdowns
   3. Revenue Forecast — the LSTM model, with a rolling forecast the user can
      extend into the future
+
+Data source: queries BigQuery directly (not a bundled CSV), so this dashboard
+reflects whatever the daily n8n pipeline has most recently loaded — same
+live source Looker Studio uses. See README for why this matters.
 
 Run:
     streamlit run app/dashboard.py
@@ -19,12 +23,14 @@ import pandas as pd
 import streamlit as st
 import torch
 import torch.nn as nn
+from google.cloud import bigquery
+from google.oauth2 import service_account
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA_CLEAN = ROOT / "data/processed/sales_clean.csv"
-QUALITY_REPORT = ROOT / "data/processed/data_quality_report.json"
 MODEL_DIR = ROOT / "models/artifacts"
 
+PROJECT_ID = "bigqueryproject-509014"
+DATASET = "sales_analytics"
 LOOKBACK = 30
 
 
@@ -45,15 +51,60 @@ class RevenueForecastLSTM(nn.Module):
         return self.head(combined)
 
 
-@st.cache_data
-def load_clean_data():
-    return pd.read_csv(DATA_CLEAN, parse_dates=["Order_Date"])
+@st.cache_resource
+def get_bq_client():
+    """Auth via Streamlit secrets (Streamlit Cloud) if available, otherwise
+    fall back to Application Default Credentials (e.g. GOOGLE_APPLICATION_CREDENTIALS
+    on the VPS) — so this same code works in both places without changes."""
+    if "gcp_service_account" in st.secrets:
+        credentials = service_account.Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"]
+        )
+        return bigquery.Client(credentials=credentials, project=credentials.project_id)
+    return bigquery.Client(project=PROJECT_ID)
 
 
-@st.cache_data
-def load_quality_report():
-    with open(QUALITY_REPORT) as f:
-        return json.load(f)
+@st.cache_data(ttl=3600)  # re-query at most once an hour, not on every interaction
+def load_clean_data() -> pd.DataFrame:
+    client = get_bq_client()
+    query = f"SELECT * FROM `{PROJECT_ID}.{DATASET}.sales_transactions_clean`"
+    df = client.query(query).to_dataframe()
+    df["Order_Date"] = pd.to_datetime(df["Order_Date"])
+    return df
+
+
+@st.cache_data(ttl=3600)
+def load_quality_report() -> dict:
+    """Computed live from BigQuery (raw vs. clean row counts, remaining nulls)
+    instead of a static JSON file, so this stays accurate as the pipeline runs."""
+    client = get_bq_client()
+
+    raw_count = client.query(
+        f"SELECT COUNT(*) AS n FROM `{PROJECT_ID}.{DATASET}.raw_sales_transactions`"
+    ).to_dataframe()["n"][0]
+    clean_count = client.query(
+        f"SELECT COUNT(*) AS n FROM `{PROJECT_ID}.{DATASET}.sales_transactions_clean`"
+    ).to_dataframe()["n"][0]
+
+    missing_query = f"""
+        SELECT
+          COUNTIF(Return_Reason IS NULL) AS Return_Reason,
+          COUNTIF(Promotion_Code IS NULL) AS Promotion_Code,
+          COUNTIF(Customer_Rating IS NULL) AS Customer_Rating,
+          COUNTIF(Customer_Age IS NULL) AS Customer_Age,
+          COUNTIF(Delivery_Days IS NULL) AS Delivery_Days
+        FROM `{PROJECT_ID}.{DATASET}.sales_transactions_clean`
+    """
+    missing_row = client.query(missing_query).to_dataframe().iloc[0].to_dict()
+    missing_values = {k: int(v) for k, v in missing_row.items() if v > 0}
+
+    return {
+        "rows_before": int(raw_count),
+        "rows_after": int(clean_count),
+        "duplicate_transaction_ids_removed": int(raw_count - clean_count),
+        "ages_nulled": missing_row.get("Customer_Age", 0),
+        "missing_values_after": missing_values,
+    }
 
 
 @st.cache_resource
@@ -105,33 +156,42 @@ def forecast_forward(model, scaler, daily: pd.DataFrame, horizon: int) -> pd.Dat
 st.set_page_config(page_title="Sales Pipeline Portfolio Project", layout="wide")
 st.title("Sales Analytics Pipeline")
 st.caption("ETL → BigQuery → PyTorch forecasting, built on real messy transaction data")
-st.link_button( "📊 View Business Dashboard (Looker Studio)", "https://datastudio.google.com/reporting/b511419c-3a80-4f4b-ac77-4afb72263271", )
+st.link_button(
+    "📊 View Business Dashboard (Looker Studio)",
+    "https://datastudio.google.com/reporting/b511419c-3a80-4f4b-ac77-4afb72263271",
+)
 
 df = load_clean_data()
 quality = load_quality_report()
+
+st.caption(
+    f"🔴 Live from BigQuery — last transaction date: **{df['Order_Date'].max().strftime('%Y-%m-%d')}** "
+    f"· {len(df):,} total rows · refreshed hourly"
+)
 
 tab1, tab2, tab3 = st.tabs(["Data Quality (ETL)", "Business Overview", "Revenue Forecast (PyTorch)"])
 
 with tab1:
     st.subheader("What the ETL step fixed")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Rows before -> after", f"{quality['rows_before']:,} -> {quality['rows_after']:,}")
+    col1.metric("Rows: raw -> clean", f"{quality['rows_before']:,} -> {quality['rows_after']:,}")
     col2.metric("Duplicate IDs removed", quality["duplicate_transaction_ids_removed"])
-    col3.metric("Implausible ages nulled", quality["implausible_ages_nulled"])
+    col3.metric("Ages flagged as out-of-range", quality["ages_nulled"])
 
-    st.markdown("**Raw data quality issues found and fixed:**")
+    st.markdown("**Raw data quality issues found and fixed (structural — applies to every pipeline run):**")
     st.markdown(
         "- Inconsistent text casing across `Payment_Method`, `Product_Category`, `Order_Status` "
         "(e.g. `'paypal'`, `'PayPal'`, `'PAYPAL'` all normalized to one value)\n"
-        "- 45 duplicate `Transaction_ID`s removed\n"
+        "- Duplicate `Transaction_ID`s removed on every run\n"
         "- Customer ages outside a plausible range (e.g. 4, 112) nulled rather than silently kept\n"
-        "- 9 new analysis-ready fields derived: `Is_Return`, `Margin_Percent`, `Discount_Bucket`, "
+        "- 9 analysis-ready fields derived: `Is_Return`, `Margin_Percent`, `Discount_Bucket`, "
         "`Delivery_Speed_Bucket`, `Is_Weekend_Order`, and more"
     )
 
-    st.subheader("Remaining missing values (after cleaning)")
-    missing = pd.Series(quality["missing_values_after"]).sort_values(ascending=False)
-    st.bar_chart(missing)
+    st.subheader("Remaining missing values (live, after cleaning)")
+    if quality["missing_values_after"]:
+        missing = pd.Series(quality["missing_values_after"]).sort_values(ascending=False)
+        st.bar_chart(missing)
     st.caption(
         "Most of this is expected, not a data quality problem: e.g. `Return_Reason` is only "
         "populated when an order was actually returned, and `Promotion_Code` only when a promo was used."
@@ -164,6 +224,12 @@ with tab2:
 with tab3:
     st.subheader("Revenue forecast — LSTM trained on daily revenue")
     model, scaler, metrics = load_forecast_model()
+
+    st.caption(
+        "The model weights below are from the last VPS training run (not retrained live in this app), "
+        "but the history it forecasts from IS the live BigQuery data above — so the forecast always "
+        "starts from the most recent real data, even though the model itself updates on n8n's schedule."
+    )
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Test MAE", f"${metrics['mae']:,.0f}")
